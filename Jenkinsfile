@@ -1,53 +1,50 @@
 pipeline {
     agent any
 
-    environment {
-        ANSIBLE_HOSTS = 'inventory'  // Path to the Ansible inventory file
-    }
-
     stages {
-        stage('Checkout Code') {
-            steps {
-                checkout scm  // Checkout the repository containing the Ansible playbook
-            }
-        }
-
         stage('Install Prerequisites') {
             steps {
                 script {
-                    // Install Ansible if not already installed
+                    // Install Docker if not already installed
                     sh '''
-                        if ! command -v ansible &> /dev/null; then
+                        if ! command -v docker &> /dev/null; then
                             sudo apt-get update -y
-                            sudo apt-get install -y ansible
+                            sudo apt-get install -y docker.io
+                            sudo systemctl start docker
+                            sudo systemctl enable docker
+                        fi
+                    '''
+
+                    // Add Jenkins user to the Docker group
+                    sh '''
+                        if ! groups jenkins | grep -q '\bdocker\b'; then
+                            sudo usermod -aG docker jenkins
+                            sudo systemctl restart jenkins
                         fi
                     '''
                 }
             }
         }
 
-        stage('Run Ansible Playbook') {
+        stage('Verify Docker Installation') {
             steps {
-                sh 'ansible-playbook -i ${ANSIBLE_HOSTS} install_software.yml'
+                sh 'docker --version'
             }
         }
 
-        stage('Verify Installation') {
+        stage('Run a Docker Container') {
             steps {
-                sh '''
-                    docker --version
-                    systemctl status jenkins
-                '''
+                sh 'docker run hello-world'
             }
         }
     }
 
     post {
         success {
-            echo "Installation completed successfully!"
+            echo "Docker installation and verification completed successfully!"
         }
         failure {
-            echo "Installation failed. Check the logs for details."
+            echo "Pipeline failed. Check the logs for details."
         }
     }
 }
