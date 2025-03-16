@@ -2,45 +2,45 @@ pipeline {
     agent any
 
     stages {
-        stage('Install Prerequisites') {
+        stage('Install Prerequisites with Ansible') {
             steps {
                 script {
-                    // Install Docker if not already installed
+                    // Install Ansible if not already installed
                     sh '''
-                        if ! command -v docker &> /dev/null; then
+                        if ! command -v ansible &> /dev/null; then
                             sudo apt-get update -y
-                            sudo apt-get install -y docker.io
-                            sudo systemctl start docker
-                            sudo systemctl enable docker
+                            sudo apt-get install -y ansible
                         fi
                     '''
 
-                    // Add Jenkins user to the Docker group
-                    sh '''
-                        if ! groups jenkins | grep -q '\bdocker\b'; then
-                            sudo usermod -aG docker jenkins
-                        fi
-                    '''
+                    // Run the Ansible playbook to install Docker and Nginx
+                    sh 'ansible-playbook -i inventory install_prerequisites.yml'
                 }
             }
         }
 
-        stage('Verify Docker Installation') {
+        stage('Clone Git Repository') {
             steps {
-                sh 'docker --version'
+                git url: 'https://github.com/cloudpost03/website_deploy.git', branch: 'main'
             }
         }
 
-        stage('Run a Docker Container') {
+        stage('Build Docker Image') {
             steps {
-                sh 'docker run hello-world'
+                sh 'docker build -t my-web-app .'
+            }
+        }
+
+        stage('Run Docker Container') {
+            steps {
+                sh 'docker run -d -p 8080:80 my-web-app'
             }
         }
     }
 
     post {
         success {
-            echo "Docker installation and verification completed successfully!"
+            echo "Pipeline completed successfully!"
         }
         failure {
             echo "Pipeline failed. Check the logs for details."
