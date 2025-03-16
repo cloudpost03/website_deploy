@@ -19,7 +19,6 @@ pipeline {
                     sh '''
                         if ! groups jenkins | grep -q '\bdocker\b'; then
                             sudo usermod -aG docker jenkins
-                            sudo systemctl restart jenkins
                         fi
                     '''
                 }
