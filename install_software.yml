@@ -1,17 +1,6 @@
-    - name: Install Jenkins
-      apt:
-        name: jenkins
-        state: present
-
-    - name: Start and enable Docker service
+       - name: Start and enable Docker service
       service:
         name: docker
-        state: started
-        enabled: yes
-
-    - name: Start and enable Jenkins service
-      service:
-        name: jenkins
         state: started
         enabled: yes
 
@@ -23,12 +12,3 @@
     - name: Print Docker version
       debug:
         msg: "{{ docker_version.stdout }}"
-
-    - name: Verify Jenkins installation
-      command: systemctl status jenkins
-      register: jenkins_status
-      changed_when: false
-
-    - name: Print Jenkins status
-      debug:
-        msg: "{{ jenkins_status.stdout }}"
